@@ -1,0 +1,7 @@
+Notes:
+
+* Cassandra 0.5
+* Direct port of pycassa
+* Basic conversion of types (UUIDs to strings)
+
+Read phpcassa.php for examples and email hoan.tonthat@gmail.com with any questions
