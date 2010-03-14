@@ -213,6 +213,29 @@ class CassandraCF {
         return $resp;
     }
     
+    // Wrappers
+    public function get_list($key, $key_name='key', $slice_start="", $slice_finish="") {
+        // Must be on supercols!
+        $resp = $this->get($key, NULL, $slice_start, $slice_finish);
+        $ret = array();
+        foreach($resp as $_key => $_value) {
+            $_value[$key_name] = $_key;
+            $ret[] = $_value;
+        }
+        return $ret;
+    }
+    
+    public function get_range_list($key_name='key', $start_key="", $finish_key="",
+                                   $row_count=self::DEFAULT_ROW_LIMIT, $slice_start="", $slice_finish="") {
+        $resp = $this->get_range($start_key, $finish_key, $row_count, $slice_start, $slice_finish);
+        $ret = array();
+        foreach($resp as $_key => $_value) {
+            $_value[$key_name] = $_key;
+            $ret[] = $_value;
+        }
+        return $ret;
+    }
+    
     // Helpers for parsing Cassandra's thrift objects into PHP arrays
     public function keyslices_to_array($keyslices) {
         $ret = null;
