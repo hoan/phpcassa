@@ -326,7 +326,11 @@ class UUID {
     }
     
     static private function conv_binary2byte($src) {
-        $byte = unpack('C16', $src);
+        $byte = array();
+        $tmp = unpack('C16', $src);
+        foreach (array_keys($tmp) as $key)
+            $byte[$key - 1] = $tmp[$key];
+        
         return $byte;
     }
     
