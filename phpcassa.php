@@ -119,7 +119,7 @@ class CassandraCF {
     public function get($key, $super_column=NULL, $slice_start="", $slice_finish="") {
         $column_parent = new cassandra_ColumnParent();
         $column_parent->column_family = $this->column_family;
-        $column_parent->super_column = $this->unparse_column_name($super_column, true);
+        $column_parent->super_column = $this->unparse_column_name($super_column, false);
 
         $slice_range = new cassandra_SliceRange();
         $slice_range->start = $slice_start;
@@ -230,8 +230,10 @@ class CassandraCF {
         $resp = $this->get_range($start_key, $finish_key, $row_count, $slice_start, $slice_finish);
         $ret = array();
         foreach($resp as $_key => $_value) {
-            $_value[$key_name] = $_key;
-            $ret[] = $_value;
+            if(!empty($_value)) { // filter nulls
+                $_value[$key_name] = $_key;
+                $ret[] = $_value;
+            }
         }
         return $ret;
     }
@@ -325,6 +327,9 @@ class CassandraCF {
         $type = $is_column ? $this->column_type : $this->subcolumn_type;
         if($type == "LexicalUUIDType" || $type == "TimeUUIDType") {
             return UUID::convert($column_name, UUID::FMT_BINARY, UUID::FMT_STRING);
+        } else if($type == "LongType") {
+            $tmp = unpack("L", $column_name); // FIXME: currently only supports 32 bit unsigned
+            return $tmp[1];
         } else {
             return $column_name;
         }
@@ -337,6 +342,8 @@ class CassandraCF {
         $type = $is_column ? $this->column_type : $this->subcolumn_type;
         if($type == "LexicalUUIDType" || $type == "TimeUUIDType") {
             return UUID::convert($column_name, UUID::FMT_STRING, UUID::FMT_BINARY);
+        } else if($type == "LongType") {
+            return pack("LL", $column_name, 0); // FIXME: currently only supports 32 bit unsigned
         } else {
             return $column_name;
         }
