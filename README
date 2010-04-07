@@ -35,4 +35,7 @@ $users->remove('1', 'password'); // removes 'password' field
 $users->get_count('1'); // counts the number of columns in user 1 (in this case 2)
 $users->get_range('1', '10'); // gets all users between '1' and '10'
 
-Email hoan.tonthat@gmail.com with any questions
+Email hoan.tonthat@gmail.com with any questions. We also have a google group to ask questions:
+
+http://groups.google.com/group/phpcassa
+
