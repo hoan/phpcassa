@@ -117,14 +117,14 @@ class CassandraCF {
         $this->parse_columns = true;
     }
 
-    public function get($key, $super_column=NULL, $column_count=100, $reversed=False, $slice_start="", $slice_finish="") {
+    public function get($key, $super_column=NULL, $slice_start="", $slice_finish="", $column_reversed=False, $column_count=100) {
         $column_parent = new cassandra_ColumnParent();
         $column_parent->column_family = $this->column_family;
         $column_parent->super_column = $this->unparse_column_name($super_column, false);
 
         $slice_range = new cassandra_SliceRange();
         $slice_range->count = $column_count;
-        $slice_range->reversed = $reversed;
+        $slice_range->reversed = $column_reversed;
         $slice_range->start = $slice_start;
         $slice_range->finish = $slice_finish;
         $predicate = new cassandra_SlicePredicate();
