@@ -51,6 +51,7 @@ class CassandraConn {
         // * Once a connection is opened, it stays open
         // * TODO: add random and round robin order
         // * TODO: add write-preferred and read-preferred nodes
+        shuffle(self::$connections);
         foreach(self::$connections as $connection) {
             try {
                 $transport = $connection['transport'];
