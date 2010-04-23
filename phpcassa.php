@@ -331,7 +331,7 @@ class CassandraCF {
         if($type == "LexicalUUIDType" || $type == "TimeUUIDType") {
             return UUID::convert($column_name, UUID::FMT_BINARY, UUID::FMT_STRING);
         } else if($type == "LongType") {
-            $tmp = unpack("L", $column_name); // FIXME: currently only supports 32 bit unsigned
+            $tmp = unpack("N", $column_name); // FIXME: currently only supports 32 bit unsigned
             return $tmp[1];
         } else {
             return $column_name;
@@ -346,7 +346,7 @@ class CassandraCF {
         if($type == "LexicalUUIDType" || $type == "TimeUUIDType") {
             return UUID::convert($column_name, UUID::FMT_STRING, UUID::FMT_BINARY);
         } else if($type == "LongType") {
-            return pack("LL", $column_name, 0); // FIXME: currently only supports 32 bit unsigned
+            return pack("NN", $column_name, 0); // FIXME: currently only supports 32 bit unsigned
         } else {
             return $column_name;
         }
