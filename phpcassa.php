@@ -20,7 +20,7 @@
 
 class CassandraConn {
     const DEFAULT_THRIFT_PORT = 9160;
-    
+
     static private $connections = array();
     static private $last_error;
 
@@ -43,7 +43,7 @@ class CassandraConn {
         }
         return FALSE;
     }
-    
+
     // Default client
     static public function get_client($write_mode = false) {
         // * Try to connect to every cassandra node in order
@@ -77,7 +77,7 @@ class CassandraUtil {
     static public function uuid1($node="", $ns="") {
         return UUID::generate(UUID::UUID_TIME,UUID::FMT_STRING, $node, $ns);
     }
-    
+
     // Time
     static public function get_time() {
         // use microtime where possible, stolen from pandra
@@ -93,7 +93,7 @@ class CassandraCF {
     const DEFAULT_ROW_LIMIT = 100; // default max # of rows for get_range()
     const DEFAULT_COLUMN_TYPE = "UTF8String";
     const DEFAULT_SUBCOLUMN_TYPE = null;
-    
+
     public $keyspace;
     public $column_family;
     public $is_super;
@@ -102,7 +102,7 @@ class CassandraCF {
     public $column_type; // CompareWith (TODO: actually use this)
     public $subcolumn_type; // CompareSubcolumnsWith (TODO: actually use this)
     public $parse_columns;
-    
+
     /*
     BytesType: Simple sort by byte value. No validation is performed.
     AsciiType: Like BytesType, but validates that the input can be parsed as US-ASCII.
@@ -111,7 +111,7 @@ class CassandraCF {
     LexicalUUIDType: A 128bit UUID, compared lexically (by byte value)
     TimeUUIDType: a 128bit version 1 UUID, compared by timestamp
     */
-    
+
     public function __construct($keyspace, $column_family,
                                 $is_super=false,
                                 $column_type=self::DEFAULT_COLUMN_TYPE,
@@ -142,8 +142,8 @@ class CassandraCF {
         $slice_range = new cassandra_SliceRange();
         $slice_range->count = $column_count;
         $slice_range->reversed = $column_reversed;
-        $slice_range->start = $slice_start;
-        $slice_range->finish = $slice_finish;
+    	$slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
+    	$slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -159,8 +159,8 @@ class CassandraCF {
         $column_parent->super_column = NULL;
 
         $slice_range = new cassandra_SliceRange();
-        $slice_range->start = $slice_start;
-        $slice_range->finish = $slice_finish;
+    	$slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
+    	$slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -191,8 +191,8 @@ class CassandraCF {
         $column_parent->super_column = NULL;
 
         $slice_range = new cassandra_SliceRange();
-        $slice_range->start = $slice_start;
-        $slice_range->finish = $slice_finish;
+    	$slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
+    	$slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -215,16 +215,16 @@ class CassandraCF {
 
         return $resp;
     }
-    
+
     public function remove($key, $column_name=null) {
         $timestamp = CassandraUtil::get_time();
 
         $column_path = new cassandra_ColumnPath();
         $column_path->column_family = $this->column_family;
         if($this->is_super) {
-            $column_path->super_column = $this->unparse_column_name($column_name, true);
+            $column_path->super_column = $this->unparse_column_name($column_name, false);
         } else {
-            $column_path->column = $this->unparse_column_name($column_name, false);
+            $column_path->column = $this->unparse_column_name($column_name, true);
         }
 
         $client = CassandraConn::get_client();
@@ -232,7 +232,7 @@ class CassandraCF {
 
         return $resp;
     }
-    
+
     // Wrappers
     public function get_list($key, $key_name='key', $slice_start="", $slice_finish="") {
         // Must be on supercols!
@@ -244,7 +244,7 @@ class CassandraCF {
         }
         return $ret;
     }
-    
+
     public function get_range_list($key_name='key', $start_key="", $finish_key="",
                                    $row_count=self::DEFAULT_ROW_LIMIT, $slice_start="", $slice_finish="") {
         $resp = $this->get_range($start_key, $finish_key, $row_count, $slice_start, $slice_finish);
@@ -257,7 +257,7 @@ class CassandraCF {
         }
         return $ret;
     }
-    
+
     // Helpers for parsing Cassandra's thrift objects into PHP arrays
     public function keyslices_to_array($keyslices) {
         $ret = null;
@@ -354,7 +354,7 @@ class CassandraCF {
             return $column_name;
         }
     }
-    
+
     public function unparse_column_name($column_name, $is_column=true) {
         if(!$this->parse_columns) return $column_name;
         if(!$column_name) return NULL;
@@ -367,7 +367,7 @@ class CassandraCF {
         } else {
             return $column_name;
         }
-    }    
+    }
 }
 
 ?>
