@@ -72,6 +72,23 @@ class CassandraConn {
     }
 }
 
+class CassandraUtil {
+    // UUID
+    static public function uuid1($node="", $ns="") {
+        return UUID::generate(UUID::UUID_TIME,UUID::FMT_STRING, $node, $ns);
+    }
+    
+    // Time
+    static public function get_time() {
+        // use microtime where possible, stolen from pandra
+//        if (PHP_INT_SIZE == 8 || (!(PHP_INT_SIZE == 8) && !function_exists("thrift_protocol_write_binary"))) {
+//            return round(microtime(true) * 1000, 3);
+//        } else {
+            return time();
+//        }
+    }
+}
+
 class CassandraCF {
     const DEFAULT_ROW_LIMIT = 100; // default max # of rows for get_range()
     const DEFAULT_COLUMN_TYPE = "UTF8String";
@@ -188,7 +205,7 @@ class CassandraCF {
     }
 
     public function insert($key, $columns) {
-        $timestamp = time();
+        $timestamp = CassandraUtil::get_time();
 
         $cfmap = array();
         $cfmap[$this->column_family] = $this->array_to_supercolumns_or_columns($columns, $timestamp);
@@ -198,9 +215,9 @@ class CassandraCF {
 
         return $resp;
     }
-
+    
     public function remove($key, $column_name=null) {
-        $timestamp = time();
+        $timestamp = CassandraUtil::get_time();
 
         $column_path = new cassandra_ColumnPath();
         $column_path->column_family = $this->column_family;
@@ -284,7 +301,7 @@ class CassandraCF {
 
     // Helpers for turning PHP arrays into Cassandra's thrift objects
     public function array_to_supercolumns_or_columns($array, $timestamp=null) {
-        if(empty($timestamp)) $timestamp = time();
+        if(empty($timestamp)) $timestamp = CassandraUtil::get_time();
 
         $ret = null;
         foreach($array as $name => $value) {
@@ -308,7 +325,7 @@ class CassandraCF {
     }
 
     public function array_to_columns($array, $timestamp=null) {
-        if(empty($timestamp)) $timestamp = time();
+        if(empty($timestamp)) $timestamp = CassandraUtil::get_time();
 
         $ret = null;
         foreach($array as $name => $value) {
@@ -350,7 +367,7 @@ class CassandraCF {
         } else {
             return $column_name;
         }
-    }
+    }    
 }
 
 ?>
