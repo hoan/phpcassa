@@ -315,7 +315,7 @@ class CassandraCF {
                 $c_or_sc = new cassandra_ColumnOrSuperColumn();
                 $c_or_sc->column = new cassandra_Column();
                 $c_or_sc->column->name = $this->unparse_column_name($name, true);
-                $c_or_sc->column->value = $value;
+                $c_or_sc->column->value = $this->to_column_value($value);;
                 $c_or_sc->column->timestamp = $timestamp;
             }
             $ret[] = $c_or_sc;
@@ -331,12 +331,18 @@ class CassandraCF {
         foreach($array as $name => $value) {
             $column = new cassandra_Column();
             $column->name = $this->unparse_column_name($name, false);
-            $column->value = $value;
+            $column->value = $this->to_column_value($value);
             $column->timestamp = $timestamp;
 
             $ret[] = $column;
         }
         return $ret;
+    }
+
+    public function to_column_value($thing) {
+        if($thing == null) return "";
+
+        return $thing;
     }
 
     // ARGH
