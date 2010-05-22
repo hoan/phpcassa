@@ -80,12 +80,13 @@ class CassandraUtil {
 
     // Time
     static public function get_time() {
-        // use microtime where possible, stolen from pandra
-//        if (PHP_INT_SIZE == 8 || (!(PHP_INT_SIZE == 8) && !function_exists("thrift_protocol_write_binary"))) {
-//            return round(microtime(true) * 1000, 3);
-//        } else {
-            return time();
-//        }
+        // By Zach Buller (zachbuller@gmail.com)
+        $time1 = microtime();
+        settype($time1, 'string'); //needs converted to string, otherwise will omit trailing zeroes
+        $time2 = explode(" ", $time1);
+        $time2[0] = preg_replace('/0./', '', $time2[0], 1);
+        $time3 = ($time2[1].$time2[0])/100;
+        return $time3;
     }
 }
 
