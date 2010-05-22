@@ -1,6 +1,6 @@
 Notes:
 
-* Cassandra 0.5
+* Compatible with Cassandra 0.5.1 upwards (0.6.1)
 * Direct port of pycassa
 * Basic conversion of types (UUIDs to strings)
 
