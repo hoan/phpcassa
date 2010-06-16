@@ -160,8 +160,8 @@ class CassandraCF {
         $column_parent->super_column = NULL;
 
         $slice_range = new cassandra_SliceRange();
-    	$slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
-    	$slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
+        $slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
+        $slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -169,8 +169,8 @@ class CassandraCF {
         $resp = $client->multiget_slice($this->keyspace, $keys, $column_parent, $predicate, $this->read_consistency_level);
 
         $ret = null;
-        foreach($resp as $name => $value) {
-            $ret[$name] = $this->supercolumns_or_columns_to_array($value);
+        foreach($keys as $sk => $k) {
+            $ret[$k] = $this->supercolumns_or_columns_to_array($resp[$k]);
         }
         return $ret;
     }
