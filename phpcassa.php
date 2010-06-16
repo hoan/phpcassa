@@ -341,7 +341,7 @@ class CassandraCF {
     }
 
     public function to_column_value($thing) {
-        if($thing == null) return "";
+        if($thing === null) return "";
 
         return $thing;
     }
