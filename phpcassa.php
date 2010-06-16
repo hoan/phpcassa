@@ -143,8 +143,8 @@ class CassandraCF {
         $slice_range = new cassandra_SliceRange();
         $slice_range->count = $column_count;
         $slice_range->reversed = $column_reversed;
-    	$slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
-    	$slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
+        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  true) : "";
+        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, true) : "";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -160,8 +160,8 @@ class CassandraCF {
         $column_parent->super_column = NULL;
 
         $slice_range = new cassandra_SliceRange();
-        $slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
-        $slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
+        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  true) : "";
+        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, true) : "";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -192,8 +192,8 @@ class CassandraCF {
         $column_parent->super_column = NULL;
 
         $slice_range = new cassandra_SliceRange();
-    	$slice_range->start =  $slice_start?$this->unparse_column_name($slice_start,true):"";
-    	$slice_range->finish = $slice_finish?$this->unparse_column_name($slice_finish,true):"";
+        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  true) : "";
+        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, true) : "";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
