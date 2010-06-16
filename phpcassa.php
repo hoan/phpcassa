@@ -223,9 +223,9 @@ class CassandraCF {
         $column_path = new cassandra_ColumnPath();
         $column_path->column_family = $this->column_family;
         if($this->is_super) {
-            $column_path->super_column = $this->unparse_column_name($column_name, false);
+            $column_path->super_column = $this->unparse_column_name($column_name, true);
         } else {
-            $column_path->column = $this->unparse_column_name($column_name, true);
+            $column_path->column = $this->unparse_column_name($column_name, false);
         }
 
         $client = CassandraConn::get_client();
