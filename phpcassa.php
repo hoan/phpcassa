@@ -20,14 +20,15 @@
 
 class CassandraConn {
     const DEFAULT_THRIFT_PORT = 9160;
+    const DEFAULT_THRIFT_TRANSPORT = 'TBufferedTransport';
 
     static private $connections = array();
     static private $last_error;
 
-    static public function add_node($host, $port=self::DEFAULT_THRIFT_PORT) {
+    static public function add_node($host, $port=self::DEFAULT_THRIFT_PORT, $transport=self::DEFAULT_THRIFT_TRANSPORT) {
         try {
             // Create Thrift transport and binary protocol cassandra client
-            $transport = new TBufferedTransport(new TSocket($host, $port), 1024, 1024);
+            $transport = new $transport(new TSocket($host, $port), 1024, 1024);
             $client    = new CassandraClient(new TBinaryProtocolAccelerated($transport));
 
             // Store it in the connections
