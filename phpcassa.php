@@ -25,10 +25,10 @@ class CassandraConn {
     static private $connections = array();
     static private $last_error;
 
-    static public function add_node($host, $port=self::DEFAULT_THRIFT_PORT, $transport=self::DEFAULT_THRIFT_TRANSPORT) {
+    static public function add_node($host, $port=self::DEFAULT_THRIFT_PORT, $transporttype=self::DEFAULT_THRIFT_TRANSPORT) {
         try {
             // Create Thrift transport and binary protocol cassandra client
-            $transport = new $transport(new TSocket($host, $port), 1024, 1024);
+            $transport = new $transporttype(new TSocket($host, $port), ($transporttype == 'TBufferedTransport')? 1024 : true, ($transporttype == 'TBufferedTransport')? 1024 : true);
             $client    = new CassandraClient(new TBinaryProtocolAccelerated($transport));
 
             // Store it in the connections
@@ -378,4 +378,3 @@ class CassandraCF {
     }
 }
 
-?>
