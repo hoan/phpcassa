@@ -266,6 +266,16 @@ class CassandraCF {
         return $ret;
     }
 
+    public function multiget_list($keys, $key_name='key', $slice_start="", $slice_finish="") {
+        $resp = $this->multiget($keys, $slice_start, $slice_finish);
+        $ret = array();
+        foreach($resp as $_key => $_value) {
+            $_value[$key_name] = $_key;
+            $ret[] = $_value;
+        }
+        return $ret;
+    }
+
     // Helpers for parsing Cassandra's thrift objects into PHP arrays
     public function keyslices_to_array($keyslices) {
         $ret = null;
