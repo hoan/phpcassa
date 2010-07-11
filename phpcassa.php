@@ -28,10 +28,11 @@ class CassandraConn {
                                     $port=self::DEFAULT_THRIFT_PORT,
                                     $framed_transport=false,
                                     $send_timeout=null,
-                                    $recv_timeout=null) {
+                                    $recv_timeout=null,
+                                    $persist=false) {
         try {
             // Create Thrift transport and binary protocol cassandra client
-            $socket = new TSocket($host, $port);
+            $socket = new TSocket($host, $port, $persist);
             if($send_timeout) $socket->setSendTimeout($send_timeout);
             if($recv_timeout) $socket->setRecvTimeout($recv_timeout);
 
