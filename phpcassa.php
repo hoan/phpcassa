@@ -20,22 +20,28 @@
 
 class CassandraConn {
     const DEFAULT_THRIFT_PORT = 9160;
-    const DEFAULT_THRIFT_TRANSPORT = 'TBufferedTransport';
-    const DEFAULT_THRIFT_TIMEOUT = 10; // in seconds.
     
     static private $connections = array();
     static private $last_error;
 
-    static public function add_node($host, $port=self::DEFAULT_THRIFT_PORT, $transporttype=self::DEFAULT_THRIFT_TRANSPORT) {
+    static public function add_node($host,
+                                    $port=self::DEFAULT_THRIFT_PORT,
+                                    $framed_transport=false,
+                                    $send_timeout=null,
+                                    $recv_timeout=null) {
         try {
             // Create Thrift transport and binary protocol cassandra client
             $socket = new TSocket($host, $port);
-            //We need to override the timeout
-            $socket->setRecvTimeout(self::DEFAULT_THRIFT_TIMEOUT*1000);
-            $socket->setSendTimeout(self::DEFAULT_THRIFT_TIMEOUT*1000);
-            
-            $transport = new $transporttype($socket, ($transporttype == 'TBufferedTransport')? 1024 : true, ($transporttype == 'TBufferedTransport')? 1024 : true);
-            $client    = new CassandraClient(new TBinaryProtocolAccelerated($transport));
+            if($send_timeout) $socket->setSendTimeout($send_timeout);
+            if($recv_timeout) $socket->setRecvTimeout($recv_timeout);
+
+            if($framed_transport) {
+                $transport = new TFramedTransport($socket, true, true);
+            } else {
+                $transport = new TBufferedTransport($socket, 1024, 1024);
+            }
+
+            $client = new CassandraClient(new TBinaryProtocolAccelerated($transport));
 
             // Store it in the connections
             self::$connections[] = array(
