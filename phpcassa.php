@@ -383,8 +383,7 @@ class CassandraCF {
         if($type == "LexicalUUIDType" || $type == "TimeUUIDType") {
             return UUID::convert($column_name, UUID::FMT_BINARY, UUID::FMT_STRING);
         } else if($type == "LongType") {
-            $tmp = unpack("N", $column_name); // FIXME: currently only supports 32 bit unsigned
-            return $tmp[1];
+            return $this->unpack_longtype($column_name);
         } else {
             return $column_name;
         }
@@ -398,9 +397,22 @@ class CassandraCF {
         if($type == "LexicalUUIDType" || $type == "TimeUUIDType") {
             return UUID::convert($column_name, UUID::FMT_STRING, UUID::FMT_BINARY);
         } else if($type == "LongType") {
-            return pack("NN", $column_name, 0); // FIXME: currently only supports 32 bit unsigned
+            return $this->pack_longtype($column_name);
         } else {
             return $column_name;
         }
+    }
+    
+    // See http://webcache.googleusercontent.com/search?q=cache:9jjbeSy434UJ:wiki.apache.org/cassandra/FAQ+cassandra+php+%22A+long+is+exactly+8+bytes%22&cd=1&hl=en&ct=clnk&gl=us
+    public function pack_longtype($x) {
+        return pack('C8',
+            ($x >> 56) & 0xff, ($x >> 48) & 0xff, ($x >> 40) & 0xff, ($x >> 32) & 0xff,
+            ($x >> 24) & 0xff, ($x >> 16) & 0xff, ($x >> 8) & 0xff, $x & 0xff
+        );
+    }
+
+    public function unpack_longtype($x) {
+        $a = unpack('C8', $x);
+        return ($a[1] << 56) + ($a[2] << 48) + ($a[3] << 40) + ($a[4] << 32) + ($a[5] << 24) + ($a[6] << 16) + ($a[7] << 8) + $a[8];
     }
 }
