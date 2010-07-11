@@ -216,10 +216,10 @@ class CassandraCF {
         $timestamp = CassandraUtil::get_time();
 
         $cfmap = array();
-        $cfmap[$this->column_family] = $this->array_to_supercolumns_or_columns($columns, $timestamp);
+        $cfmap[$key][$this->column_family] = $this->array_to_mutation($columns, $timestamp);
 
         $client = CassandraConn::get_client();
-        $resp = $client->batch_insert($this->keyspace, $key, $cfmap, $this->write_consistency_level);
+        $resp = $client->batch_mutate($this->keyspace, $cfmap, $this->write_consistency_level);
 
         return $resp;
     }
@@ -318,6 +318,17 @@ class CassandraCF {
     }
 
     // Helpers for turning PHP arrays into Cassandra's thrift objects
+    public function array_to_mutation($array, $timestamp=null) {
+        $c_or_sc = $this->array_to_supercolumns_or_columns($array, $timestamp);
+        $ret = null;
+        foreach($c_or_sc as $row) {
+            $mutation = new cassandra_Mutation();
+            $mutation->column_or_supercolumn = $row;
+            $ret[] = $mutation;
+        }
+        return $ret;
+    }
+    
     public function array_to_supercolumns_or_columns($array, $timestamp=null) {
         if(empty($timestamp)) $timestamp = CassandraUtil::get_time();
 
