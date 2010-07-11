@@ -1089,6 +1089,9 @@ class CassandraClient implements CassandraIf {
     if ($result->success !== null) {
       return $result->success;
     }
+    if ($result->ire !== null) {
+      throw $result->ire;
+    }
     throw new Exception("describe_ring failed: unknown result");
   }
 
@@ -3732,7 +3735,7 @@ class cassandra_Cassandra_insert_args {
   public $column_path = null;
   public $value = null;
   public $timestamp = null;
-  public $consistency_level =   0;
+  public $consistency_level =   1;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -4025,7 +4028,7 @@ class cassandra_Cassandra_batch_insert_args {
   public $keyspace = null;
   public $key = null;
   public $cfmap = null;
-  public $consistency_level =   0;
+  public $consistency_level =   1;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -4335,7 +4338,7 @@ class cassandra_Cassandra_remove_args {
   public $key = null;
   public $column_path = null;
   public $timestamp = null;
-  public $consistency_level =   0;
+  public $consistency_level =   1;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -4608,7 +4611,7 @@ class cassandra_Cassandra_batch_mutate_args {
 
   public $keyspace = null;
   public $mutation_map = null;
-  public $consistency_level =   0;
+  public $consistency_level =   1;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5705,6 +5708,7 @@ class cassandra_Cassandra_describe_ring_result {
   static $_TSPEC;
 
   public $success = null;
+  public $ire = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5718,11 +5722,19 @@ class cassandra_Cassandra_describe_ring_result {
             'class' => 'cassandra_TokenRange',
             ),
           ),
+        1 => array(
+          'var' => 'ire',
+          'type' => TType::STRUCT,
+          'class' => 'cassandra_InvalidRequestException',
+          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['success'])) {
         $this->success = $vals['success'];
+      }
+      if (isset($vals['ire'])) {
+        $this->ire = $vals['ire'];
       }
     }
   }
@@ -5764,6 +5776,14 @@ class cassandra_Cassandra_describe_ring_result {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->ire = new cassandra_InvalidRequestException();
+            $xfer += $this->ire->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -5792,6 +5812,11 @@ class cassandra_Cassandra_describe_ring_result {
         }
         $output->writeListEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->ire !== null) {
+      $xfer += $output->writeFieldBegin('ire', TType::STRUCT, 1);
+      $xfer += $this->ire->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
