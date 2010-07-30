@@ -183,8 +183,11 @@ class CassandraCF {
         $resp = $client->multiget_slice($this->keyspace, $keys, $column_parent, $predicate, $this->read_consistency_level);
 
         $ret = null;
-        foreach($keys as $sk => $k) {
-            $ret[$k] = $this->supercolumns_or_columns_to_array($resp[$k]);
+//        foreach($keys as $sk => $k) {
+//            $ret[$k] = $this->supercolumns_or_columns_to_array($resp[$k]);
+//        }
+        foreach($resp as $key => $val) {
+            $ret[$key] = $this->supercolumns_or_columns_to_array($val);
         }
         return $ret;
     }
