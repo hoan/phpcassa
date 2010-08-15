@@ -152,20 +152,24 @@ class CassandraCF {
     public function get($key, $super_column=NULL, $slice_start="", $slice_finish="", $column_reversed=False, $column_count=100) {
         $column_parent = new cassandra_ColumnParent();
         $column_parent->column_family = $this->column_family;
-        $column_parent->super_column = $this->unparse_column_name($super_column, false);
+        $column_parent->super_column = $this->unparse_column_name($super_column, true);
 
         $slice_range = new cassandra_SliceRange();
         $slice_range->count = $column_count;
         $slice_range->reversed = $column_reversed;
-        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  true) : "";
-        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, true) : "";
+        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
+        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
         $client = CassandraConn::get_client();
         $resp = $client->get_slice($this->keyspace, $key, $column_parent, $predicate, $this->read_consistency_level);
 
-        return $this->supercolumns_or_columns_to_array($resp);
+        if($super_column) {
+            return $this->supercolumns_or_columns_to_array($resp, false);
+        } else {
+            return $this->supercolumns_or_columns_to_array($resp);
+        }
     }
 
     public function multiget($keys, $slice_start="", $slice_finish="") {
@@ -174,8 +178,8 @@ class CassandraCF {
         $column_parent->super_column = NULL;
 
         $slice_range = new cassandra_SliceRange();
-        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  true) : "";
-        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, true) : "";
+        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
+        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
         $predicate = new cassandra_SlicePredicate();
         $predicate->slice_range = $slice_range;
 
@@ -301,16 +305,16 @@ class CassandraCF {
         return $ret;
     }
 
-    public function supercolumns_or_columns_to_array($array_of_c_or_sc) {
+    public function supercolumns_or_columns_to_array($array_of_c_or_sc, $parse_as_columns=true) {
         $ret = null;
         foreach($array_of_c_or_sc as $c_or_sc) {
             if($c_or_sc->column) { // normal columns
-                $name  = $this->parse_column_name($c_or_sc->column->name, true);
+                $name  = $this->parse_column_name($c_or_sc->column->name, $parse_as_columns);
                 $value = $c_or_sc->column->value;
 
                 $ret[$name] = $value;
             } else if($c_or_sc->super_column) { // super columns
-                $name    = $this->parse_column_name($c_or_sc->super_column->name, true);
+                $name    = $this->parse_column_name($c_or_sc->super_column->name, $parse_as_columns);
                 $columns = $c_or_sc->super_column->columns;
 
                 $ret[$name] = $this->columns_to_array($columns);
@@ -332,6 +336,8 @@ class CassandraCF {
 
     // Helpers for turning PHP arrays into Cassandra's thrift objects
     public function array_to_mutation($array, $timestamp=null) {
+        if(empty($timestamp)) $timestamp = CassandraUtil::get_time();
+
         $c_or_sc = $this->array_to_supercolumns_or_columns($array, $timestamp);
         $ret = null;
         foreach($c_or_sc as $row) {
