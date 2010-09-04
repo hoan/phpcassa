@@ -105,7 +105,8 @@ class CassandraUtil {
 }
 
 class CassandraCF {
-    const DEFAULT_ROW_LIMIT = 100; // default max # of rows for get_range()
+    const DEFAULT_ROW_LIMIT = 1024; // default max # of rows for get_range()
+    const DEFAULT_COLUMN_LIMIT = 1024; // default max # of columns for get()
     const DEFAULT_COLUMN_TYPE = "UTF8Type";
     const DEFAULT_SUBCOLUMN_TYPE = null;
 
@@ -149,18 +150,29 @@ class CassandraCF {
         $this->parse_columns = true;
     }
 
-    public function get($key, $super_column=NULL, $slice_start="", $slice_finish="", $column_reversed=False, $column_count=100) {
+    public function get($key,
+                        $super_column=NULL,
+                        $slice_start="",
+                        $slice_finish="",
+                        $column_reversed=False,
+                        $column_count=self::DEFAULT_COLUMN_LIMIT) {
         $column_parent = new cassandra_ColumnParent();
         $column_parent->column_family = $this->column_family;
         $column_parent->super_column = $this->unparse_column_name($super_column, true);
 
-        $slice_range = new cassandra_SliceRange();
-        $slice_range->count = $column_count;
-        $slice_range->reversed = $column_reversed;
-        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
-        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
         $predicate = new cassandra_SlicePredicate();
-        $predicate->slice_range = $slice_range;
+        if(is_array($slice_start)) {
+            // Treat this as a column_names query
+            $predicate->column_names = $slice_start;
+        } else {
+            // Treat this as a slice_range query
+            $slice_range = new cassandra_SliceRange();
+            $slice_range->count = $column_count;
+            $slice_range->reversed = $column_reversed;
+            $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
+            $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
+            $predicate->slice_range = $slice_range;
+        }
 
         $client = CassandraConn::get_client();
         $resp = $client->get_slice($this->keyspace, $key, $column_parent, $predicate, $this->read_consistency_level);
@@ -177,11 +189,17 @@ class CassandraCF {
         $column_parent->column_family = $this->column_family;
         $column_parent->super_column = NULL;
 
-        $slice_range = new cassandra_SliceRange();
-        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
-        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
         $predicate = new cassandra_SlicePredicate();
-        $predicate->slice_range = $slice_range;
+        if(is_array($slice_start)) {
+            // Treat this as a column_names query
+            $predicate->column_names = $slice_start;
+        } else {
+            // Treat this as a slice_range query
+            $slice_range = new cassandra_SliceRange();
+            $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
+            $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
+            $predicate->slice_range = $slice_range;
+        }
 
         $client = CassandraConn::get_client();
         $resp = $client->multiget_slice($this->keyspace, $keys, $column_parent, $predicate, $this->read_consistency_level);
