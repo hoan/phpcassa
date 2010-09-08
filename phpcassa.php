@@ -475,8 +475,7 @@ class CassandraIterator implements Iterator {
 
     // State
     public $current_buffer;
-    public $current_position;
-    public $current_start_key;
+    public $next_start_key;
     public $beyond_last_field;
 
     public function __construct($column_family,
