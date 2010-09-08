@@ -230,11 +230,17 @@ class CassandraCF {
         $column_parent->column_family = $this->column_family;
         $column_parent->super_column = NULL;
 
-        $slice_range = new cassandra_SliceRange();
-        $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  true) : "";
-        $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, true) : "";
         $predicate = new cassandra_SlicePredicate();
-        $predicate->slice_range = $slice_range;
+        if(is_array($slice_start)) {
+            // Treat this as a column_names query
+            $predicate->column_names = $slice_start;
+        } else {
+            // Treat this as a slice_range query
+            $slice_range = new cassandra_SliceRange();
+            $slice_range->start  = $slice_start  ? $this->unparse_column_name($slice_start,  false) : "";
+            $slice_range->finish = $slice_finish ? $this->unparse_column_name($slice_finish, false) : "";
+            $predicate->slice_range = $slice_range;
+        }
 
         $key_range = new cassandra_KeyRange();
         $key_range->start_key = $start_key;
@@ -245,6 +251,10 @@ class CassandraCF {
         $resp = $client->get_range_slices($this->keyspace, $column_parent, $predicate, $key_range, $this->read_consistency_level);
 
         return $this->keyslices_to_array($resp);
+    }
+
+    public function get_range_iterator($start_key="", $end_key="", $row_count=self::DEFAULT_ROW_LIMIT, $slice_start="", $slice_finish="") {
+        return new CassandraIterator($this, $start_key, $end_key, $row_count, $slice_start, $slice_end);
     }
 
     public function insert($key, $columns) {
@@ -453,3 +463,108 @@ class CassandraCF {
         return ($a[1] << 56) + ($a[2] << 48) + ($a[3] << 40) + ($a[4] << 32) + ($a[5] << 24) + ($a[6] << 16) + ($a[7] << 8) + $a[8];
     }
 }
+
+class CassandraIterator implements Iterator {
+    const DEFAULT_BUFFER_SIZE = 1024; // default max # of rows for get_range()
+
+    // Options
+    public $column_family;
+    public $buffer_size;
+    public $start_key, $end_key;
+    public $start_slice, $end_slice;
+
+    // State
+    public $current_buffer;
+    public $current_position;
+    public $current_start_key;
+    public $beyond_last_field;
+
+    public function __construct($column_family,
+                                $start_key="",
+                                $end_key="",
+                                $buffer_size=self::DEFAULT_BUFFER_SIZE,
+                                $start_slice="",
+                                $end_slice="") {
+        // Lets go
+        $this->column_family = $column_family;
+        $this->start_key     = $start_key;
+        $this->end_key       = $end_key;
+        $this->buffer_size   = $buffer_size;
+        $this->start_slice   = $start_slice;
+        $this->end_slice     = $end_slice;
+    }
+
+    // Interface
+    public function rewind() {
+        // Setup first buffer
+        $this->beyond_last_field = false;
+        $this->next_start_key = $this->start_key;
+        $this->current_buffer = $this->column_family->get_range(
+            $this->next_start_key,
+            $this->end_key,
+            $this->buffer_size,
+            $this->start_slice,
+            $this->end_slice
+        );
+    }
+
+    public function current() {
+        return current($this->current_buffer);
+    }
+
+    public function key() {
+        return key($this->current_buffer);
+    }
+
+    public function next() {
+        // See http://www.php.net/manual/en/function.current.php#81431
+        // for figuring if we are at the end
+        $next = next($this->current_buffer);
+        $key  = key($this->current_buffer);
+        if(!isset($key)) {
+            $this->beyond_last_field = true;
+            return false;
+        } else {
+            return $next;
+        }
+    }
+
+    public function valid() {
+        if($this->beyond_last_field && count($this->current_buffer) < $this->buffer_size) {
+            // Stop if we were at the last buffer (we got less that $buffer_size elements returned)
+            return false;
+        } else if($this->beyond_last_field) {
+            // Set the next start key
+            end($this->current_buffer);
+            $this->next_start_key = key($this->current_buffer);
+
+            // Get the next buffer
+            $this->current_buffer = $this->column_family->get_range(
+                $this->next_start_key,
+                $this->end_key,
+                $this->buffer_size,
+                $this->start_slice,
+                $this->end_slice
+            );
+
+            // If the result set is 1, we can stop
+            // because the first item should always
+            // be skipped
+            if(count($this->current_buffer) == 1) {
+                return false;
+            } else {
+                // Skip 1st item (because it is the last buffer's last key)
+                next($this->current_buffer);
+
+                // Let us iterate again
+                $this->beyond_last_field = false;
+                return true;
+            }
+        } else {
+            // Normal iteration
+            return true;
+        }
+    }
+}
+
+?>
