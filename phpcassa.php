@@ -156,6 +156,14 @@ class CassandraCF {
                         $slice_finish="",
                         $column_reversed=False,
                         $column_count=self::DEFAULT_COLUMN_LIMIT) {
+        // If we do get($key, $x) on a non-super column
+        // we should just return that attribute
+        if(!$this->is_super && $super_column) {
+            $result = $this->get($key, NULL, array($super_column));
+            return $result[$super_column];
+        }
+
+        // Otherwise do a normal get query
         $column_parent = new cassandra_ColumnParent();
         $column_parent->column_family = $this->column_family;
         $column_parent->super_column = $this->unparse_column_name($super_column, true);
@@ -257,11 +265,20 @@ class CassandraCF {
         return new CassandraIterator($this, $start_key, $end_key, $row_count, $slice_start, $slice_end);
     }
 
-    public function insert($key, $columns) {
+    public function insert($key, $columns=null) {
         $timestamp = CassandraUtil::get_time();
 
-        $cfmap = array();
-        $cfmap[$key][$this->column_family] = $this->array_to_mutation($columns, $timestamp);
+        if(is_array($key)) {
+            // We ignore $columns and convert $key
+            // to an array map of all mutations
+            $cfmap = array();
+            foreach($key as $_key => $_columns) {
+                $cfmap[$_key][$this->column_family] = $this->array_to_mutation($_columns, $timestamp);
+            }
+        } else {
+            $cfmap = array();
+            $cfmap[$key][$this->column_family] = $this->array_to_mutation($columns, $timestamp);
+        }
 
         $client = CassandraConn::get_client();
         $resp = $client->batch_mutate($this->keyspace, $cfmap, $this->write_consistency_level);
